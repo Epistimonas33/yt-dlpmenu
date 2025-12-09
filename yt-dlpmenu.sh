@@ -11,8 +11,104 @@ GREEN="\e[32m"
 YELLOW="\e[33m"
 RESET="\e[0m"
 
-command -v yt-dlp >/dev/null 2>&1 || { echo -e "${RED}Σφάλμα: Το yt-dlp δεν είναι εγκατεστημένο!${RESET}"; exit 1; }
-command -v ffmpeg >/dev/null 2>&1 || { echo -e "${RED}Σφάλμα: Το ffmpeg δεν είναι εγκατεστημένο!${RESET}"; exit 1; }
+# ---------------------------
+# Έλεγχος Εξαρτήσεων και Εγκατάσταση
+# ---------------------------
+
+# Έλεγχος για ffmpeg (απαραίτητο για μετατροπές ήχου/βίντεο)
+check_ffmpeg() {
+    command -v ffmpeg >/dev/null 2>&1 || {
+        echo -e "${RED}Σφάλμα: Το ffmpeg δεν είναι εγκατεστημένο!${RESET}"
+        echo " "
+        echo -e "${YELLOW}Το ffmpeg είναι απαραίτητο για τη μετατροπή ήχου και βίντεο. "
+        echo "Θέλετε να δείτε τις οδηγίες εγκατάστασης;${RESET}"
+        echo "1. Ναι, δείξε μου τις εντολές."
+        echo "2. Όχι, Έξοδος."
+        read -p "Επιλογή [1-2]: " ffmpeg_choice
+
+        case $ffmpeg_choice in
+            1)
+                echo " "
+                echo -e "${GREEN}### Οδηγίες Εγκατάστασης ffmpeg ###${RESET}"
+                echo "Επιλέξτε την εντολή που ταιριάζει στο λειτουργικό σας σύστημα:"
+                echo " "
+                echo -e "${YELLOW}➡️ Debian / Ubuntu (ή Mint):${RESET}"
+                echo -e "  > ${GREEN}sudo apt update && sudo apt install ffmpeg${RESET}"
+                echo " "
+                echo -e "${YELLOW}➡️ Fedora / CentOS / RHEL:${RESET}"
+                echo -e "  > ${GREEN}sudo dnf install ffmpeg${RESET}"
+                echo " "
+                echo -e "${YELLOW}Μετά την εγκατάσταση, τρέξτε ξανά το script.${RESET}"
+                echo " "
+                read -p "Πατήστε Enter για έξοδο και εγκαταστήστε το ffmpeg..."
+                exit 1
+                ;;
+            2)
+                echo -e "${YELLOW}Ακύρωση. Έξοδος.${RESET}"
+                exit 1
+                ;;
+            *)
+                echo -e "${RED}Μη έγκυρη επιλογή. Έξοδος.${RESET}"
+                exit 1
+                ;;
+        esac
+    }
+}
+
+# Έλεγχος για wget (απαραίτητο για την προτεινόμενη εγκατάσταση του yt-dlp)
+command -v wget >/dev/null 2>&1 || { echo -e "${RED}Σφάλμα: Το wget δεν είναι εγκατεστημένο! Είναι απαραίτητο για την αυτόματη εγκατάσταση του yt-dlp.${RESET}"; exit 1; }
+
+# Έλεγχος για yt-dlp και προσφορά εγκατάστασης
+command -v yt-dlp >/dev/null 2>&1 || {
+    echo -e "${RED}Σφάλμα: Το yt-dlp δεν είναι εγκατεστημένο!${RESET}"
+    echo " "
+    echo -e "${YELLOW}Θέλετε να εγκατασταθεί το yt-dlp τώρα; (Μέθοδος GitHub)${RESET}"
+    echo "1. Ναι (Λήψη απευθείας του εκτελέσιμου από GitHub)"
+    echo "2. Όχι, Έξοδος"
+    read -p "Επιλογή [1-2]: " install_choice
+
+    case $install_choice in
+        1)
+            echo -e "${YELLOW}Δημιουργία καταλόγου ~/.local/bin και εγκατάσταση yt-dlp...${RESET}"
+            # Δημιουργία του καταλόγου αν δεν υπάρχει
+            mkdir -p "$HOME/.local/bin"
+
+            # Λήψη του εκτελέσιμου
+            wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O "$HOME/.local/bin/yt-dlp"
+
+            if [ $? -ne 0 ]; then
+                echo -e "${RED}Η λήψη του yt-dlp απέτυχε!${RESET}"
+                exit 1
+            fi
+
+            # Εκχώρηση δικαιωμάτων εκτέλεσης
+            chmod a+rx "$HOME/.local/bin/yt-dlp"
+
+            # Ενημέρωση χρήστη για το PATH
+            if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+                echo -e "${YELLOW}========================================================================================${RESET}"
+                echo -e "${YELLOW}🚨 ΠΡΟΣΟΧΗ: Η διαδρομή $HOME/.local/bin δεν βρέθηκε στο PATH σας! ${RESET}"
+                echo -e "${YELLOW}Για να λειτουργήσει το yt-dlp, πρέπει να προσθέσετε την παραπάνω διαδρομή στο αρχείο ρυθμίσεων του shell σας (.bashrc, .zshrc).${RESET}"
+                echo -e "${YELLOW}Μπορείτε να το κάνετε τρέχοντας την εντολή: export PATH=\"\$PATH:\$HOME/.local/bin\"${RESET}"
+                echo -e "${YELLOW}ΣΗΜΕΙΩΣΗ: Ίσως χρειαστεί να ανοίξετε ένα νέο τερματικό για να εφαρμοστούν οι αλλαγές.${RESET}"
+                echo -e "${YELLOW}========================================================================================${RESET}"
+            fi
+
+            echo -e "${GREEN}✔ Το yt-dlp εγκαταστάθηκε επιτυχώς στο $HOME/.local/bin/yt-dlp!${RESET}"
+            ;;
+        2)
+            echo -e "${YELLOW}Ακύρωση. Έξοδος.${RESET}"
+            exit 1
+            ;;
+        *)
+            echo -e "${RED}Μη έγκυρη επιλογή. Έξοδος.${RESET}"
+            exit 1
+            ;;
+    esac
+
+    echo "Πατήστε Enter για να συνεχίσετε στο μενού..."
+    read
+}
 
 mkdir -p "$DOWNLOAD_DIR"
 
