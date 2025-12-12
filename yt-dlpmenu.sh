@@ -278,6 +278,7 @@ download_from_file() {
             1|"")
                 yt_dlp_download "-f bv*+ba/b" "$url" "$OUTPUT"
                 show_result $?
+                ;;
             2)
                 yt_dlp_download "-F" "$url" "/dev/null"
                 read -p "Εισάγετε τον αριθμό μορφής που θέλετε να κατεβάσετε για αυτό το URL: " format
