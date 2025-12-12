@@ -157,9 +157,10 @@ build_yt_dlp_args() {
 
 show_result() {
     status=$1
-    output_file=$2
+    
     if [ $status -eq 0 ]; then
-        echo -e "${GREEN}✔ Κατέβηκε επιτυχώς:${RESET} $output_file"
+        # Χρησιμοποιούμε την καθολική μεταβλητή που ορίστηκε στο yt_dlp_download
+        echo -e "${GREEN}✔ Κατέβηκε επιτυχώς:${RESET} $ACTUAL_OUTPUT_FILE"
     else
         echo -e "${RED}✖ Σφάλμα κατά το κατέβασμα!${RESET}"
     fi
