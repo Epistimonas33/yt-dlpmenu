@@ -169,9 +169,22 @@ show_result() {
 yt_dlp_download() {
     local opts="$1"
     local url="$2"
-    local output="$3"
+    local output_template="$3"
+    
+    # Καθορίζουμε το όνομα του αρχείου, αφαιρώντας το template
+    ACTUAL_OUTPUT_FILE=$(yt-dlp --print filename -o "$output_template" "$url")
+    
+    # Καθαρίζουμε το όνομα αν είναι playlist (για να μην εμφανίζει το %(playlist_index)s στο μήνυμα)
+    ACTUAL_OUTPUT_FILE=$(echo "$ACTUAL_OUTPUT_FILE" | sed 's/^[0-9]\+ - //')
+    
+    # ----------------------------------------------------
+    # ΠΡΑΓΜΑΤΙΚΗ ΛΗΨΗ
+    # ----------------------------------------------------
+    
+    # Χρησιμοποιώ την εντολή που είχες, απλά το όνομα του αρχείου το ορίζω
+    # ως την καθολική μεταβλητή για χρήση στο show_result.
     build_yt_dlp_args
-    yt-dlp "${YTDLP_ARGS[@]}" $opts -o "$output" "$url"
+    yt-dlp "${YTDLP_ARGS[@]}" $opts -o "$output_template" "$url"
 }
 
 # ---------------------------
