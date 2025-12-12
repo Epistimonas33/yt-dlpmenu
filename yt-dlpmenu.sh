@@ -203,7 +203,7 @@ download_video() {
         1|"")
             OUTPUT="$DOWNLOAD_DIR/%(title)s.%(ext)s"
             yt_dlp_download "-f bv*+ba/b" "$url" "$OUTPUT"
-            show_result $? "$OUTPUT"
+            show_result $?
             ;;
         2)
             # Εμφάνιση όλων των διαθέσιμων μορφών
@@ -242,7 +242,7 @@ download_playlist() {
         1|"")
             OUTPUT="$DOWNLOAD_DIR/%(playlist_index)s - %(title)s.%(ext)s"
             yt_dlp_download "-f bv*+ba/b" "$url" "$OUTPUT"
-            show_result $? "$OUTPUT"
+            show_result $?
             ;;
         2)
             OUTPUT="$DOWNLOAD_DIR/%(playlist_index)s - %(title)s.%(ext)s"
@@ -277,7 +277,7 @@ download_from_file() {
         case $choice in
             1|"")
                 yt_dlp_download "-f bv*+ba/b" "$url" "$OUTPUT"
-                ;;
+                show_result $?
             2)
                 yt_dlp_download "-F" "$url" "/dev/null"
                 read -p "Εισάγετε τον αριθμό μορφής που θέλετε να κατεβάσετε για αυτό το URL: " format
