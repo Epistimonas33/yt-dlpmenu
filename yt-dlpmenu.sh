@@ -257,17 +257,52 @@ download_playlist() {
 }
 
 download_from_file() {
-    read -p "Δώστε το όνομα του αρχείου (.txt): " file
+    # Βρίσκουμε όλα τα αρχεία .txt, εξαιρώντας το cookies.txt
+    local files=($(find . -maxdepth 1 -type f -name "*.txt" ! -name "cookies.txt" -printf "%f\n" | sort))
+    
+    if [ ${#files[@]} -eq 0 ]; then
+        echo -e "${RED}Δεν βρέθηκαν αρχεία .txt (πλην cookies.txt) στον τρέχοντα κατάλογο.${RESET}"
+        read -p "Πατήστε Enter για επιστροφή στο μενού..."
+        return
+    fi
+
+    echo " "
+    echo -e "${YELLOW}➡️ Επιλέξτε αρχείο λίστας (.txt):${RESET}"
+    
+    # Εμφάνιση των αρχείων με αρίθμηση
+    for i in "${!files[@]}"; do
+        echo "$((i+1)). ${files[$i]}"
+    done
+    
+    echo " "
+    read -p "Εισάγετε τον αριθμό του αρχείου [1-${#files[@]}]: " selection
+
+    # Έλεγχος εγκυρότητας επιλογής
+    if ! [[ "$selection" =~ ^[0-9]+$ ]] || [ "$selection" -lt 1 ] || [ "$selection" -gt ${#files[@]} ]; then
+        echo -e "${RED}Μη έγκυρη επιλογή: $selection${RESET}"
+        sleep 1
+        return
+    fi
+    
+    # Ανάθεση του επιλεγμένου ονόματος στη μεταβλητή file
+    local file="${files[$((selection-1))]}"
+    echo -e "${GREEN}Επιλέχθηκε:${RESET} $file"
+    sleep 1
+
+    # --- Συνέχεια της Λογικής Λήψης ---
+    
+    # Αν και η ύπαρξη ελέγχεται, το αφήνουμε για επιπλέον ασφάλεια
     if [ ! -f "$file" ]; then
         echo -e "${RED}Το αρχείο δεν βρέθηκε!${RESET}"
         sleep 2
         return
     fi
 
+    echo " "
     echo "1. Υψηλή ποιότητα (default)"
     echo "2. Συγκεκριμένη ποιότητα"
     echo "3. Μόνο ήχος (MP3)"
-    read -p "Επιλογή [1-3]: " choice
+    read -p "Επιλογή μορφής [1-3]: " choice
 
     for url in $(grep -v '^#' "$file"); do
         [[ -z "$url" ]] && continue
@@ -277,11 +312,13 @@ download_from_file() {
         case $choice in
             1|"")
                 yt_dlp_download "-f bv*+ba/b" "$url" "$OUTPUT"
-                show_result $?
                 ;;
             2)
+                # ΣΗΜΕΙΩΣΗ: Για την Επιλογή 2 σε λίστα, ρωτάμε για τη μορφή 
+                # σε κάθε URL. Αν θέλεις να ρωτάμε μόνο μία φορά, πρέπει 
+                # να κάνουμε refactoring αυτό το block.
                 yt_dlp_download "-F" "$url" "/dev/null"
-                read -p "Εισάγετε τον αριθμό μορφής που θέλετε να κατεβάσετε για αυτό το URL: " format
+                read -p "Εισάγετε τον αριθμό μορφής για αυτό το URL: " format
                 while [[ -z "$format" ]]; do
                     read -p "Πρέπει να εισάγετε έναν αριθμό μορφής: " format
                 done
@@ -295,7 +332,7 @@ download_from_file() {
         echo ""
     done
 
-    echo -e "${GREEN}✔ Ολοκληρώθηκε η λήψη όλων των συνδέσμων.${RESET}"
+    echo -e "${GREEN}✔ Ολοκληρώθηκε η λήψη όλων των συνδέσμων από το $file.${RESET}"
     read -p "Πατήστε Enter για επιστροφή στο μενού..."
 }
 
