@@ -234,9 +234,14 @@ download_video() {
 
 download_playlist() {
     read -p "Εισάγετε το URL της playlist: " url
+    
+    # Αν το URL είναι κενό, η yt_dlp_download θα βγάλει σφάλμα και θα επιστρέψει 1.
+    if [ -z "$url" ]; then return; fi
+    
     echo "1. Όλα βίντεο σε υψηλή ποιότητα"
     echo "2. Όλα σε MP3 (audio)"
-    read -p "Επιλογή [1-2]: " choice
+    echo "3. Συγκεκριμένη ποιότητα"  # <--- Η ΝΕΑ ΕΠΙΛΟΓΗ
+    read -p "Επιλογή [1-3]: " choice # <--- Ενημερώθηκε το εύρος
 
     case $choice in
         1|"")
@@ -247,7 +252,33 @@ download_playlist() {
         2)
             OUTPUT="$DOWNLOAD_DIR/%(playlist_index)s - %(title)s.%(ext)s"
             yt_dlp_download "-x --audio-format mp3" "$url" "$OUTPUT"
-            show_result 0 "$DOWNLOAD_DIR"
+            show_result $? # Χρησιμοποιούμε show_result $? για σωστή αναφορά σφάλματος
+            ;;
+        3)
+            # Εμφάνιση όλων των διαθέσιμων μορφών
+            # Σημείωση: Το yt-dlp δείχνει τις μορφές για το πρώτο βίντεο της λίστας ή τη γενική μορφή της λίστας.
+            echo -e "${YELLOW}Λήψη διαθέσιμων μορφών (για το πρώτο βίντεο της playlist)...${RESET}"
+            
+            # Εκτελούμε την εντολή για εμφάνιση μορφών
+            build_yt_dlp_args
+            yt-dlp "${YTDLP_ARGS[@]}" --list-formats "$url"
+
+            # Έλεγχος επιτυχίας της προηγούμενης εντολής
+            if [ $? -ne 0 ]; then
+                echo -e "${RED}Δεν ήταν δυνατή η εμφάνιση των μορφών. Επιστροφή στο μενού.${RESET}"
+                read -p "Πατήστε Enter για επιστροφή στο μενού..."
+                return
+            fi
+            
+            # Επιλογή μορφής από χρήστη
+            read -p "Εισάγετε τον αριθμό μορφής ή το συνδυασμό (π.χ., '137+251') που θέλετε να κατεβάσετε: " format
+            while [[ -z "$format" ]]; do
+                read -p "Πρέπει να εισάγετε μια μορφή: " format
+            done
+
+            OUTPUT="$DOWNLOAD_DIR/%(playlist_index)s - %(title)s.%(ext)s"
+            yt_dlp_download "-f $format" "$url" "$OUTPUT"
+            show_result $?
             ;;
         *)
             echo -e "${YELLOW}Μη έγκυρη επιλογή.${RESET}"
