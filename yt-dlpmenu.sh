@@ -159,7 +159,7 @@ show_result() {
     status=$1
     
     if [ $status -eq 0 ]; then
-        # Χρησιμοποιούμε την καθολική μεταβλητή που ορίστηκε στο yt_dlp_download
+        
         echo -e "${GREEN}✔ Κατέβηκε επιτυχώς:${RESET} $ACTUAL_OUTPUT_FILE"
     else
         echo -e "${RED}✖ Σφάλμα κατά το κατέβασμα!${RESET}"
@@ -172,18 +172,17 @@ yt_dlp_download() {
     local url="$2"
     local output_template="$3"
     
-    # Καθορίζουμε το όνομα του αρχείου, αφαιρώντας το template
+   
     ACTUAL_OUTPUT_FILE=$(yt-dlp --print filename -o "$output_template" "$url")
     
-    # Καθαρίζουμε το όνομα αν είναι playlist (για να μην εμφανίζει το %(playlist_index)s στο μήνυμα)
+    
     ACTUAL_OUTPUT_FILE=$(echo "$ACTUAL_OUTPUT_FILE" | sed 's/^[0-9]\+ - //')
     
     # ----------------------------------------------------
-    # ΠΡΑΓΜΑΤΙΚΗ ΛΗΨΗ
+    #  ΛΗΨΗ
     # ----------------------------------------------------
     
-    # Χρησιμοποιώ την εντολή που είχες, απλά το όνομα του αρχείου το ορίζω
-    # ως την καθολική μεταβλητή για χρήση στο show_result.
+    
     build_yt_dlp_args
     yt-dlp "${YTDLP_ARGS[@]}" $opts -o "$output_template" "$url"
 }
@@ -241,7 +240,7 @@ download_playlist() {
     echo "1. Όλα βίντεο σε υψηλή ποιότητα"
     echo "2. Όλα σε MP3 (audio)"
     echo "3. Συγκεκριμένη ποιότητα"  # <--- Η ΝΕΑ ΕΠΙΛΟΓΗ
-    read -p "Επιλογή [1-3]: " choice # <--- Ενημερώθηκε το εύρος
+    read -p "Επιλογή [1-3]: " choice 
 
     case $choice in
         1|"")
@@ -320,7 +319,7 @@ download_from_file() {
     echo -e "${GREEN}Επιλέχθηκε:${RESET} $file"
     sleep 1
 
-    # --- Συνέχεια της Λογικής Λήψης ---
+    
     
     # Αν και η ύπαρξη ελέγχεται, το αφήνουμε για επιπλέον ασφάλεια
     if [ ! -f "$file" ]; then
@@ -345,9 +344,7 @@ download_from_file() {
                 yt_dlp_download "-f bv*+ba/b" "$url" "$OUTPUT"
                 ;;
             2)
-                # ΣΗΜΕΙΩΣΗ: Για την Επιλογή 2 σε λίστα, ρωτάμε για τη μορφή 
-                # σε κάθε URL. Αν θέλεις να ρωτάμε μόνο μία φορά, πρέπει 
-                # να κάνουμε refactoring αυτό το block.
+                
                 yt_dlp_download "-F" "$url" "/dev/null"
                 read -p "Εισάγετε τον αριθμό μορφής για αυτό το URL: " format
                 while [[ -z "$format" ]]; do
