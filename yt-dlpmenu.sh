@@ -58,45 +58,65 @@ check_ffmpeg() {
 # Έλεγχος για wget (απαραίτητο για την προτεινόμενη εγκατάσταση του yt-dlp)
 command -v wget >/dev/null 2>&1 || { echo -e "${RED}Σφάλμα: Το wget δεν είναι εγκατεστημένο! Είναι απαραίτητο για την αυτόματη εγκατάσταση του yt-dlp.${RESET}"; exit 1; }
 
-# Έλεγχος για yt-dlp και προσφορά εγκατάστασης
+# Έλεγχος για yt-dlp και εγκατάσταση
+
 command -v yt-dlp >/dev/null 2>&1 || {
     echo -e "${RED}Σφάλμα: Το yt-dlp δεν είναι εγκατεστημένο!${RESET}"
     echo " "
     echo -e "${YELLOW}Θέλετε να εγκατασταθεί το yt-dlp τώρα; (Μέθοδος GitHub)${RESET}"
-    echo "1. Ναι (Λήψη απευθείας του εκτελέσιμου από GitHub)"
-    echo "2. Όχι, Έξοδος"
-    read -p "Επιλογή [1-2]: " install_choice
+    echo "1. Εγκατάσταση στο $HOME/.local/bin (Χωρίς sudo, μόνο για εσάς - Συνιστάται)"
+    echo "2. Εγκατάσταση στο /usr/local/bin (Με sudo, για όλους τους χρήστες)"
+    echo "3. Όχι, Έξοδος"
+    read -p "Επιλογή [1-3]: " install_choice
 
     case $install_choice in
         1)
-            echo -e "${YELLOW}Δημιουργία καταλόγου ~/.local/bin και εγκατάσταση yt-dlp...${RESET}"
-            # Δημιουργία του καταλόγου αν δεν υπάρχει
-            mkdir -p "$HOME/.local/bin"
+            TARGET_DIR="$HOME/.local/bin"
+            echo -e "${YELLOW}Δημιουργία καταλόγου $TARGET_DIR και εγκατάσταση yt-dlp...${RESET}"
+            mkdir -p "$TARGET_DIR"
 
             # Λήψη του εκτελέσιμου
-            wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O "$HOME/.local/bin/yt-dlp"
-
+            wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O "$TARGET_DIR/yt-dlp"
+            
             if [ $? -ne 0 ]; then
                 echo -e "${RED}Η λήψη του yt-dlp απέτυχε!${RESET}"
                 exit 1
             fi
 
             # Εκχώρηση δικαιωμάτων εκτέλεσης
-            chmod a+rx "$HOME/.local/bin/yt-dlp"
+            chmod a+rx "$TARGET_DIR/yt-dlp"
 
-            # Ενημέρωση χρήστη για το PATH
-            if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+            # Ενημέρωση χρήστη για το PATH (αφορά μόνο το .local/bin)
+            if [[ ":$PATH:" != *":$TARGET_DIR:"* ]]; then
                 echo -e "${YELLOW}========================================================================================${RESET}"
-                echo -e "${YELLOW}🚨 ΠΡΟΣΟΧΗ: Η διαδρομή $HOME/.local/bin δεν βρέθηκε στο PATH σας! ${RESET}"
+                echo -e "${YELLOW}🚨 ΠΡΟΣΟΧΗ: Η διαδρομή $TARGET_DIR δεν βρέθηκε στο PATH σας! ${RESET}"
                 echo -e "${YELLOW}Για να λειτουργήσει το yt-dlp, πρέπει να προσθέσετε την παραπάνω διαδρομή στο αρχείο ρυθμίσεων του shell σας (.bashrc, .zshrc).${RESET}"
                 echo -e "${YELLOW}Μπορείτε να το κάνετε τρέχοντας την εντολή: export PATH=\"\$PATH:\$HOME/.local/bin\"${RESET}"
                 echo -e "${YELLOW}ΣΗΜΕΙΩΣΗ: Ίσως χρειαστεί να ανοίξετε ένα νέο τερματικό για να εφαρμοστούν οι αλλαγές.${RESET}"
                 echo -e "${YELLOW}========================================================================================${RESET}"
             fi
-
-            echo -e "${GREEN}✔ Το yt-dlp εγκαταστάθηκε επιτυχώς στο $HOME/.local/bin/yt-dlp!${RESET}"
+            
+            echo -e "${GREEN}✔ Το yt-dlp εγκαταστάθηκε επιτυχώς στο $TARGET_DIR!${RESET}"
             ;;
         2)
+            TARGET_DIR="/usr/local/bin"
+            echo -e "${YELLOW}ΠΡΟΣΟΧΗ: Αυτή η εγκατάσταση απαιτεί δικαιώματα διαχειριστή (sudo).${RESET}"
+            echo -e "${YELLOW}Εγκατάσταση yt-dlp στο $TARGET_DIR...${RESET}"
+            
+            # Λήψη και εγκατάσταση με sudo
+            sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O "$TARGET_DIR/yt-dlp"
+            
+            if [ $? -ne 0 ]; then
+                echo -e "${RED}Η λήψη του yt-dlp απέτυχε! (Ελέγξτε αν βάλατε σωστά τον κωδικό sudo)${RESET}"
+                exit 1
+            fi
+
+            # Εκχώρηση δικαιωμάτων εκτέλεσης με sudo
+            sudo chmod a+rx "$TARGET_DIR/yt-dlp"
+            
+            echo -e "${GREEN}✔ Το yt-dlp εγκαταστάθηκε επιτυχώς στο $TARGET_DIR!${RESET}"
+            ;;
+        3)
             echo -e "${YELLOW}Ακύρωση. Έξοδος.${RESET}"
             exit 1
             ;;
@@ -105,6 +125,13 @@ command -v yt-dlp >/dev/null 2>&1 || {
             exit 1
             ;;
     esac
+
+    # Επανέλεγχος για να βεβαιωθούμε ότι το yt-dlp είναι πλέον στο PATH
+    command -v yt-dlp >/dev/null 2>&1 || {
+        echo -e "${RED}Σφάλμα: Η εγκατάσταση ολοκληρώθηκε, αλλά το yt-dlp δεν είναι ακόμα αναγνωρίσιμο. Ίσως χρειαστεί να ανοίξετε νέο τερματικό ή να διορθώσετε το PATH.${RESET}"
+        read -p "Πατήστε Enter για έξοδο..."
+        exit 1
+    }
 
     echo "Πατήστε Enter για να συνεχίσετε στο μενού..."
     read
