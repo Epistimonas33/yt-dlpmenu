@@ -372,6 +372,65 @@ show_formats() {
 }
 
 # ---------------------------
+# Update
+# ---------------------------
+
+
+update_yt_dlp() {
+    echo -e "${YELLOW}Εκτελώ αναβάθμιση yt-dlp...${RESET}"
+    
+    # 1. Βρίσκουμε πού είναι εγκατεστημένο το yt-dlp
+    local YT_DLP_PATH=$(which yt-dlp)
+    
+    if [ -z "$YT_DLP_PATH" ]; then
+        echo -e "${RED}Σφάλμα: Δεν βρέθηκε το yt-dlp στο PATH. Δεν είναι δυνατή η αναβάθμιση.${RESET}"
+        read -p "Πατήστε Enter για επιστροφή στο μενού..."
+        return
+    fi
+
+    # 2. Δοκιμάζουμε πρώτα την εντολή -U
+    echo -e "${YELLOW}Προσπαθώ αναβάθμιση με 'yt-dlp -U'...${RESET}"
+    yt-dlp -U 2>&1 
+    local status=$?
+    
+    if [ $status -eq 0 ]; then
+        echo -e "${GREEN}✔ Το yt-dlp αναβαθμίστηκε επιτυχώς.${RESET}"
+    else
+        echo -e "${YELLOW}Η αναβάθμιση με '-U' απέτυχε. Ενδέχεται να χρειάζονται δικαιώματα root ή να έγινε εγκατάσταση μέσω wget/GitHub.${RESET}"
+        
+        # 3. Εναλλακτική μέθοδος: Κατέβασμα απευθείας του εκτελέσιμου
+        
+        # Ελέγχουμε αν η διαδρομή απαιτεί sudo (π.χ. /usr/local/bin)
+        if [[ "$YT_DLP_PATH" == /usr/local/bin* ]]; then
+            echo -e "${YELLOW}Απαιτούνται δικαιώματα root για αναβάθμιση στο $YT_DLP_PATH.${RESET}"
+            read -p "Πατήστε Enter για αναβάθμιση με sudo ή Ctrl+C για ακύρωση..."
+            # Χρησιμοποιούμε sudo για λήψη και αντικατάσταση
+            sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O "$YT_DLP_PATH"
+            sudo chmod a+rx "$YT_DLP_PATH"
+            
+            if [ $? -eq 0 ]; then
+                echo -e "${GREEN}✔ Το yt-dlp αναβαθμίστηκε επιτυχώς στο $YT_DLP_PATH (με sudo).${RESET}"
+            else
+                echo -e "${RED}✖ Σφάλμα κατά την αναβάθμιση με sudo.${RESET}"
+            fi
+            
+        else
+            # Είμαστε σε προσωπικό κατάλογο (π.χ. ~/.local/bin)
+            echo -e "${YELLOW}Εκτελώ αναβάθμιση μέσω λήψης (wget) στο $YT_DLP_PATH...${RESET}"
+            wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O "$YT_DLP_PATH"
+
+            if [ $? -eq 0 ]; then
+                chmod a+rx "$YT_DLP_PATH"
+                echo -e "${GREEN}✔ Το yt-dlp αναβαθμίστηκε επιτυχώς στο $YT_DLP_PATH.${RESET}"
+            else
+                echo -e "${RED}✖ Σφάλμα κατά την αναβάθμιση.${RESET}"
+            fi
+        fi
+    fi
+    
+    read -p "Πατήστε Enter για επιστροφή στο μενού..."
+}
+# ---------------------------
 # Μενού
 # ---------------------------
 while true; do
@@ -383,15 +442,18 @@ while true; do
     echo "2. Εμφάνιση διαθέσιμων ποιοτήτων"
     echo "3. Κατέβασμα playlist"
     echo "4. Κατέβασμα από αρχείο λίστας (.txt)"
+    echo "---"
+    echo "6. Αναβάθμιση yt-dlp"
     echo "5. Έξοδος"
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    read -p "Επιλέξτε [1-5]: " opt
+    read -p "Επιλέξτε [1-6]: " opt
 
     case $opt in
         1) download_video ;;
         2) show_formats ;;
         3) download_playlist ;;
         4) download_from_file ;;
+        6) update_yt_dlp ;;
         5) exit 0 ;;
         *) echo -e "${YELLOW}Μη έγκυρη επιλογή.${RESET}"; sleep 2 ;;
     esac
